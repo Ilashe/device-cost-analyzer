@@ -1,71 +1,100 @@
 import React, { useState } from 'react';
-import { Calculator, DollarSign, Clock, ShoppingCart, TrendingUp, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Calculator, DollarSign, Clock, ShoppingCart, TrendingUp, AlertCircle, CheckCircle, XCircle, TrendingDown } from 'lucide-react';
 
 export default function HourlyCostCalculator() {
   const [hoursPerDay, setHoursPerDay] = useState('');
   const [ratePerHour, setRatePerHour] = useState('');
   const [deviceCost, setDeviceCost] = useState('');
+  const [depreciationRate, setDepreciationRate] = useState('15'); // Default 15% annual depreciation
 
-  // Calculations
-  const daily = hoursPerDay && ratePerHour ? hoursPerDay * ratePerHour : 0;
-  const weekly = daily * 5; // 5 working days
-  const monthly = weekly * 4; // 4 weeks
-  const yearly = monthly * 12; // 12 months
-  const fourYears = yearly * 4; // 4 years
+  // Calculate device value over time
+  const calculateDepreciation = () => {
+    if (!deviceCost) return {};
+    
+    const initialCost = parseFloat(deviceCost);
+    const depRate = parseFloat(depreciationRate) / 100;
+    
+    const yearValues = {
+      year0: initialCost,
+      year1: initialCost * (1 - depRate),
+      year2: initialCost * Math.pow(1 - depRate, 2),
+      year3: initialCost * Math.pow(1 - depRate, 3),
+      year4: initialCost * Math.pow(1 - depRate, 4)
+    };
+    
+    return yearValues;
+  };
 
-  // AI Decision Logic
+  const deviceValues = calculateDepreciation();
+
+  // Calculate average maintenance costs (more realistic)
+  const averageDaily = hoursPerDay && ratePerHour ? (parseFloat(hoursPerDay) * parseFloat(ratePerHour)) : 0;
+  const averageWeekly = averageDaily * 5;
+  const averageMonthly = averageWeekly * 4;
+  const averageYearly = averageMonthly * 12;
+  const averageFourYears = averageYearly * 4;
+
+  // AI Decision Logic with depreciation consideration
   const getRecommendation = () => {
-    if (!deviceCost || !yearly) return null;
+    if (!deviceCost || !averageYearly) return null;
 
-    const cost = parseFloat(deviceCost);
-    const maintenanceCost = yearly;
-    const fourYearMaintenance = fourYears;
-    const totalCost4Years = cost + fourYearMaintenance;
+    const initialCost = parseFloat(deviceCost);
+    const maintenanceCost = averageYearly;
+    const fourYearMaintenance = averageFourYears;
+    
+    // Calculate residual value after 4 years
+    const residualValue = deviceValues.year4 || 0;
+    
+    // Total cost = device cost - residual value + maintenance
+    const netDeviceCost = initialCost - residualValue;
+    const totalCost4Years = netDeviceCost + fourYearMaintenance;
 
     // Calculate ratios
-    const yearlyMaintenanceRatio = (maintenanceCost / cost) * 100;
-    const fourYearMaintenanceRatio = (fourYearMaintenance / cost) * 100;
-    const totalCostRatio = (totalCost4Years / cost) * 100;
+    const yearlyMaintenanceRatio = (maintenanceCost / initialCost) * 100;
+    const fourYearMaintenanceRatio = (fourYearMaintenance / initialCost) * 100;
+    const totalCostRatio = (totalCost4Years / initialCost) * 100;
 
-    // Decision logic
+    // Decision logic with more balanced thresholds
     let recommendation = '';
-    let status = ''; // 'excellent', 'good', 'fair', 'poor', 'not-recommended'
+    let status = '';
     let reasoning = [];
 
-    if (yearlyMaintenanceRatio < 10) {
+    const avgYearlyRatio = yearlyMaintenanceRatio;
+
+    if (avgYearlyRatio < 8) {
       status = 'excellent';
       recommendation = 'HIGHLY RECOMMENDED';
-      reasoning.push('Annual maintenance cost is less than 10% of device cost - excellent value');
+      reasoning.push('Average annual maintenance is less than 8% of device cost - excellent value');
       reasoning.push('Very low operational expenses relative to initial investment');
-    } else if (yearlyMaintenanceRatio < 25) {
+    } else if (avgYearlyRatio < 15) {
       status = 'good';
       recommendation = 'RECOMMENDED';
-      reasoning.push('Annual maintenance cost is reasonable at ' + yearlyMaintenanceRatio.toFixed(1) + '% of device cost');
-      reasoning.push('Good balance between initial cost and operating expenses');
-    } else if (yearlyMaintenanceRatio < 50) {
+      reasoning.push(`Average annual maintenance at ${avgYearlyRatio.toFixed(1)}% of device cost - solid investment`);
+      reasoning.push('Good balance between initial cost and realistic operating expenses');
+    } else if (avgYearlyRatio < 25) {
       status = 'fair';
       recommendation = 'PROCEED WITH CAUTION';
-      reasoning.push('Annual maintenance cost is ' + yearlyMaintenanceRatio.toFixed(1) + '% of device cost - moderately high');
+      reasoning.push(`Average annual maintenance is ${avgYearlyRatio.toFixed(1)}% of device cost - moderate`);
       reasoning.push('Consider if the device productivity justifies this ongoing expense');
-    } else if (yearlyMaintenanceRatio < 100) {
+    } else if (avgYearlyRatio < 40) {
       status = 'poor';
       recommendation = 'NOT RECOMMENDED';
-      reasoning.push('Annual maintenance cost is ' + yearlyMaintenanceRatio.toFixed(1) + '% of device cost - very high');
-      reasoning.push('You will spend nearly as much on maintenance as the device cost itself each year');
+      reasoning.push(`Average annual maintenance is ${avgYearlyRatio.toFixed(1)}% of device cost - high`);
+      reasoning.push('Significant operational costs relative to device value');
     } else {
       status = 'not-recommended';
       recommendation = 'STRONGLY NOT RECOMMENDED';
-      reasoning.push('Annual maintenance exceeds device cost - economically unsustainable');
-      reasoning.push('Consider alternatives or more efficient solutions');
+      reasoning.push('Annual maintenance costs are excessive relative to device value');
+      reasoning.push('Consider alternatives or exploring more cost-effective solutions');
     }
 
     // Additional insights
-    if (fourYearMaintenance > cost * 2) {
-      reasoning.push('Over 4 years, maintenance will cost ' + (fourYearMaintenance / cost).toFixed(1) + 'x the device price');
+    if (residualValue > initialCost * 0.2) {
+      reasoning.push(`Device retains ${((residualValue / initialCost) * 100).toFixed(1)}% value after 4 years - good resale potential`);
     }
 
-    if (totalCost4Years > cost * 3) {
-      reasoning.push('Total 4-year cost is ' + (totalCost4Years / cost).toFixed(1) + 'x the initial investment');
+    if (fourYearMaintenance > initialCost) {
+      reasoning.push(`Over 4 years, maintenance costs will reach ${(fourYearMaintenance / initialCost).toFixed(1)}x the initial investment`);
     }
 
     return {
@@ -74,8 +103,10 @@ export default function HourlyCostCalculator() {
       reasoning,
       yearlyMaintenanceRatio: yearlyMaintenanceRatio.toFixed(1),
       fourYearMaintenanceRatio: fourYearMaintenanceRatio.toFixed(1),
-      totalCost4Years,
-      breakEvenPoint: (cost / yearly).toFixed(1) // Years to break even
+      totalCost4Years: totalCost4Years.toFixed(2),
+      netDeviceCost: netDeviceCost.toFixed(2),
+      residualValue: residualValue.toFixed(2),
+      breakEvenPoint: (initialCost / averageYearly).toFixed(1)
     };
   };
 
@@ -114,7 +145,7 @@ export default function HourlyCostCalculator() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -126,7 +157,7 @@ export default function HourlyCostCalculator() {
             </h1>
           </div>
           <p className="text-gray-600 ml-16">
-            Calculate maintenance costs and get AI-powered purchase recommendations
+            Calculate average maintenance costs with depreciation and get AI-powered recommendations
           </p>
         </div>
 
@@ -141,7 +172,7 @@ export default function HourlyCostCalculator() {
             {/* Hours Per Day */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hours Worked Per Day
+                Average Hours Per Day
               </label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -151,19 +182,20 @@ export default function HourlyCostCalculator() {
                   step="0.5"
                   value={hoursPerDay}
                   onChange={(e) => setHoursPerDay(e.target.value)}
-                  placeholder="e.g., 8"
+                  placeholder="e.g., 4"
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
                   hours
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Average across all workdays</p>
             </div>
 
             {/* Rate Per Hour */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rate Per Hour (Maintenance Cost)
+                Average Maintenance Cost Per Hour
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -173,19 +205,20 @@ export default function HourlyCostCalculator() {
                   step="0.01"
                   value={ratePerHour}
                   onChange={(e) => setRatePerHour(e.target.value)}
-                  placeholder="e.g., 25.00"
+                  placeholder="e.g., 8.50"
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
-                  USD
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
+                  USD/hr
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Average repair & service cost</p>
             </div>
 
-            {/* Device Cost - Full Width */}
-            <div className="md:col-span-2">
+            {/* Device Cost */}
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Initial Device/Equipment Cost
+                Initial Device Cost
               </label>
               <div className="relative">
                 <ShoppingCart className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -195,19 +228,82 @@ export default function HourlyCostCalculator() {
                   step="0.01"
                   value={deviceCost}
                   onChange={(e) => setDeviceCost(e.target.value)}
-                  placeholder="e.g., 5000.00"
+                  placeholder="e.g., 2000.00"
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg"
                 />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
                   USD
                 </span>
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Enter the purchase price of the device or equipment
-              </p>
+            </div>
+
+            {/* Depreciation Rate */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Annual Depreciation Rate
+              </label>
+              <div className="relative">
+                <TrendingDown className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={depreciationRate}
+                  onChange={(e) => setDepreciationRate(e.target.value)}
+                  placeholder="e.g., 15"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg"
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
+                  %
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Typical: 10-20% for electronics</p>
             </div>
           </div>
         </div>
+
+        {/* Device Depreciation Section */}
+        {deviceCost && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+              <TrendingDown className="text-indigo-600" size={24} />
+              Device Value Over Time
+            </h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-4 rounded-xl border-2 border-indigo-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">Purchase Year</p>
+                <p className="text-2xl font-bold text-indigo-600">{formatCurrency(deviceValues.year0)}</p>
+                <p className="text-xs text-gray-500 mt-2">Year 0</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">After 1 Year</p>
+                <p className="text-2xl font-bold text-blue-600">{formatCurrency(deviceValues.year1)}</p>
+                <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year1 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-cyan-50 to-teal-50 p-4 rounded-xl border-2 border-cyan-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">After 2 Years</p>
+                <p className="text-2xl font-bold text-cyan-600">{formatCurrency(deviceValues.year2)}</p>
+                <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year2 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-teal-50 to-green-50 p-4 rounded-xl border-2 border-teal-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">After 3 Years</p>
+                <p className="text-2xl font-bold text-teal-600">{formatCurrency(deviceValues.year3)}</p>
+                <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year3 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">After 4 Years</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(deviceValues.year4)}</p>
+                <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year4 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* AI Recommendation Section */}
         {decision && (
@@ -223,7 +319,7 @@ export default function HourlyCostCalculator() {
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-xl p-4 mb-4">
                   <p className="text-3xl font-bold mb-2">{decision.recommendation}</p>
-                  <p className="text-sm opacity-90">Based on cost-benefit analysis</p>
+                  <p className="text-sm opacity-90">Based on average costs and depreciation analysis</p>
                 </div>
                 <div className="space-y-3">
                   <h3 className="font-semibold text-lg mb-2">Analysis:</h3>
@@ -238,19 +334,19 @@ export default function HourlyCostCalculator() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white border-opacity-30">
                   <div>
-                    <p className="text-sm opacity-80">Yearly Maintenance</p>
+                    <p className="text-sm opacity-80">Avg Yearly Maintenance</p>
                     <p className="text-2xl font-bold">{decision.yearlyMaintenanceRatio}%</p>
                     <p className="text-xs opacity-70">of device cost</p>
                   </div>
                   <div>
-                    <p className="text-sm opacity-80">4-Year Maintenance</p>
-                    <p className="text-2xl font-bold">{decision.fourYearMaintenanceRatio}%</p>
-                    <p className="text-xs opacity-70">of device cost</p>
+                    <p className="text-sm opacity-80">Residual Value</p>
+                    <p className="text-2xl font-bold">{formatCurrency(decision.residualValue)}</p>
+                    <p className="text-xs opacity-70">after 4 years</p>
                   </div>
                   <div>
-                    <p className="text-sm opacity-80">Total 4-Year Cost</p>
+                    <p className="text-sm opacity-80">Net 4-Year Cost</p>
                     <p className="text-2xl font-bold">{formatCurrency(decision.totalCost4Years)}</p>
-                    <p className="text-xs opacity-70">device + maintenance</p>
+                    <p className="text-xs opacity-70">with depreciation</p>
                   </div>
                   <div>
                     <p className="text-sm opacity-80">Break-Even Point</p>
@@ -267,17 +363,17 @@ export default function HourlyCostCalculator() {
         {(hoursPerDay && ratePerHour) && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-gray-800 bg-white rounded-xl p-4 shadow">
-              Maintenance Cost Breakdown
+              Average Maintenance Cost Breakdown
             </h2>
 
             {/* Daily */}
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-green-100 text-sm font-medium mb-1">Daily Maintenance Cost</p>
-                  <p className="text-4xl font-bold">{formatCurrency(daily)}</p>
+                  <p className="text-green-100 text-sm font-medium mb-1">Average Daily Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageDaily)}</p>
                   <p className="text-green-100 text-sm mt-2">
-                    {hoursPerDay} hours × {formatCurrency(ratePerHour)}
+                    {hoursPerDay} hrs × {formatCurrency(ratePerHour)}/hr
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -290,10 +386,10 @@ export default function HourlyCostCalculator() {
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium mb-1">Weekly Maintenance Cost</p>
-                  <p className="text-4xl font-bold">{formatCurrency(weekly)}</p>
+                  <p className="text-blue-100 text-sm font-medium mb-1">Average Weekly Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageWeekly)}</p>
                   <p className="text-blue-100 text-sm mt-2">
-                    5 working days × {formatCurrency(daily)}
+                    5 working days
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -306,10 +402,10 @@ export default function HourlyCostCalculator() {
             <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium mb-1">Monthly Maintenance Cost</p>
-                  <p className="text-4xl font-bold">{formatCurrency(monthly)}</p>
+                  <p className="text-purple-100 text-sm font-medium mb-1">Average Monthly Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageMonthly)}</p>
                   <p className="text-purple-100 text-sm mt-2">
-                    4 weeks × {formatCurrency(weekly)}
+                    4 weeks per month
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -322,10 +418,10 @@ export default function HourlyCostCalculator() {
             <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-orange-100 text-sm font-medium mb-1">Yearly Maintenance Cost</p>
-                  <p className="text-4xl font-bold">{formatCurrency(yearly)}</p>
+                  <p className="text-orange-100 text-sm font-medium mb-1">Average Yearly Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageYearly)}</p>
                   <p className="text-orange-100 text-sm mt-2">
-                    12 months × {formatCurrency(monthly)}
+                    12 months per year
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -338,10 +434,10 @@ export default function HourlyCostCalculator() {
             <div className="bg-gradient-to-r from-gray-700 to-gray-900 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-gray-300 text-sm font-medium mb-1">4 Years Maintenance Cost</p>
-                  <p className="text-4xl font-bold">{formatCurrency(fourYears)}</p>
+                  <p className="text-gray-300 text-sm font-medium mb-1">Average 4-Year Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageFourYears)}</p>
                   <p className="text-gray-300 text-sm mt-2">
-                    4 years × {formatCurrency(yearly)}
+                    Total maintenance expenses
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -352,53 +448,53 @@ export default function HourlyCostCalculator() {
 
             {/* Summary Table */}
             <div className="bg-white rounded-xl shadow-lg p-6 overflow-x-auto">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Complete Cost Summary</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Complete Average Cost Summary</h3>
               <table className="w-full">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
                     <th className="text-left py-3 px-4 text-gray-700 font-semibold">Period</th>
-                    <th className="text-right py-3 px-4 text-gray-700 font-semibold">Maintenance Cost</th>
+                    <th className="text-right py-3 px-4 text-gray-700 font-semibold">Avg Maintenance Cost</th>
                     {deviceCost && <th className="text-right py-3 px-4 text-gray-700 font-semibold">% of Device Cost</th>}
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
                     <td className="py-3 px-4 text-gray-600">Daily</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(daily)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((daily / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
+                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageDaily)}</td>
+                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageDaily / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
                   </tr>
                   <tr className="border-b border-gray-100">
                     <td className="py-3 px-4 text-gray-600">Weekly (5 days)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(weekly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((weekly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
+                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageWeekly)}</td>
+                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageWeekly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
                   </tr>
                   <tr className="border-b border-gray-100">
                     <td className="py-3 px-4 text-gray-600">Monthly (4 weeks)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(monthly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((monthly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
+                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageMonthly)}</td>
+                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageMonthly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
                   </tr>
                   <tr className="border-b border-gray-100">
                     <td className="py-3 px-4 text-gray-600">Yearly (12 months)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(yearly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((yearly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
+                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageYearly)}</td>
+                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageYearly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
                   </tr>
                   <tr className="bg-gray-50 border-b-2 border-gray-300">
                     <td className="py-3 px-4 text-gray-800 font-semibold">4 Years</td>
-                    <td className="py-3 px-4 text-right font-bold text-indigo-600 text-lg">{formatCurrency(fourYears)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right font-bold text-indigo-600">{((fourYears / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
+                    <td className="py-3 px-4 text-right font-bold text-indigo-600 text-lg">{formatCurrency(averageFourYears)}</td>
+                    {deviceCost && <td className="py-3 px-4 text-right font-bold text-indigo-600">{((averageFourYears / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
                   </tr>
                   {deviceCost && (
                     <tr className="bg-indigo-50">
-                      <td className="py-3 px-4 text-gray-800 font-semibold">Device Cost</td>
+                      <td className="py-3 px-4 text-gray-800 font-semibold">Initial Device Cost</td>
                       <td className="py-3 px-4 text-right font-bold text-gray-800">{formatCurrency(parseFloat(deviceCost))}</td>
                       <td className="py-3 px-4 text-right text-gray-600">100%</td>
                     </tr>
                   )}
                   {deviceCost && (
                     <tr className="bg-indigo-100">
-                      <td className="py-3 px-4 text-gray-900 font-bold">Total 4-Year Cost</td>
-                      <td className="py-3 px-4 text-right font-bold text-indigo-700 text-xl">{formatCurrency(parseFloat(deviceCost) + fourYears)}</td>
-                      <td className="py-3 px-4 text-right font-bold text-indigo-700">{(((parseFloat(deviceCost) + fourYears) / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>
+                      <td className="py-3 px-4 text-gray-900 font-bold">Total Cost (4 yrs with depreciation)</td>
+                      <td className="py-3 px-4 text-right font-bold text-indigo-700 text-xl">{formatCurrency(parseFloat(deviceCost) - (deviceValues.year4 || 0) + averageFourYears)}</td>
+                      <td className="py-3 px-4 text-right font-bold text-indigo-700">{(((parseFloat(deviceCost) - (deviceValues.year4 || 0) + averageFourYears) / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>
                     </tr>
                   )}
                 </tbody>
@@ -412,10 +508,10 @@ export default function HourlyCostCalculator() {
           <div className="bg-white rounded-xl shadow-lg p-12 text-center">
             <Calculator className="mx-auto text-gray-300 mb-4" size={64} />
             <p className="text-gray-500 text-lg mb-2">
-              Enter maintenance details to see cost analysis
+              Enter average maintenance details to see cost analysis
             </p>
             <p className="text-gray-400 text-sm">
-              Add device cost to get AI-powered purchase recommendation
+              Add device cost and depreciation rate to get AI-powered purchase recommendation
             </p>
           </div>
         )}
