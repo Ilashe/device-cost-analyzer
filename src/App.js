@@ -165,19 +165,28 @@ export default function HourlyCostCalculator() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-indigo-600 p-3 rounded-xl">
-              <Calculator className="text-white" size={28} />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-              AVW Device Cost Analyzer
-            </h1>
-          </div>
-          <p className="text-gray-600 ml-16">
-            Calculate average maintenance costs with depreciation and get AI-powered recommendations
-          </p>
-        </div>
+<div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
+  <div className="flex flex-col items-center mb-4">
+    {/* AVW Logo */}
+    <img 
+      src="https://imgur.com/BuQpKjU" 
+      alt="AVW Logo"
+      className="h-20 w-20 mb-4 object-contain"
+    />
+  </div>
+  
+  <div className="flex items-center justify-center gap-3 mb-2">
+    <div className="bg-indigo-600 p-3 rounded-xl">
+      <Calculator className="text-white" size={28} />
+    </div>
+    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+      AVW Device Cost Analyzer
+    </h1>
+  </div>
+  <p className="text-gray-600 text-center">
+    Calculate average maintenance costs with depreciation and get AI-powered recommendations
+  </p>
+</div>
 
         {/* Input Section */}
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-6">
