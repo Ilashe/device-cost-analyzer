@@ -6,6 +6,7 @@ export default function HourlyCostCalculator() {
   const [ratePerHour, setRatePerHour] = useState('');
   const [deviceCost, setDeviceCost] = useState('');
   const [depreciationRate, setDepreciationRate] = useState('15'); // Default 15% annual depreciation
+  const [reliabilityScore, setReliabilityScore] = useState('65'); // Device reliability 0-100
 
   // Calculate device value over time
   const calculateDepreciation = () => {
@@ -19,7 +20,8 @@ export default function HourlyCostCalculator() {
       year1: initialCost * (1 - depRate),
       year2: initialCost * Math.pow(1 - depRate, 2),
       year3: initialCost * Math.pow(1 - depRate, 3),
-      year4: initialCost * Math.pow(1 - depRate, 4)
+      year4: initialCost * Math.pow(1 - depRate, 4),
+      year5: initialCost * Math.pow(1 - depRate, 5)
     };
     
     return yearValues;
@@ -27,12 +29,20 @@ export default function HourlyCostCalculator() {
 
   const deviceValues = calculateDepreciation();
 
-  // Calculate average maintenance costs (more realistic)
-  const averageDaily = hoursPerDay && ratePerHour ? (parseFloat(hoursPerDay) * parseFloat(ratePerHour)) : 0;
+  // Calculate average maintenance costs with AI discretion on reliability
+  // Reliability score adjusts how often maintenance is actually needed
+  const reliabilityFactor = parseFloat(reliabilityScore) / 100;
+  
+  // AI discretion: Highly reliable devices need less frequent maintenance
+  // Factor ranges from 0.4 (very reliable, 90+ score) to 1.0 (needs constant maintenance)
+  const maintenanceAdjustmentFactor = 1.2 - (reliabilityFactor * 0.8);
+  
+  const rawDaily = hoursPerDay && ratePerHour ? (parseFloat(hoursPerDay) * parseFloat(ratePerHour)) : 0;
+  const averageDaily = rawDaily * maintenanceAdjustmentFactor;
   const averageWeekly = averageDaily * 5;
   const averageMonthly = averageWeekly * 4;
   const averageYearly = averageMonthly * 12;
-  const averageFourYears = averageYearly * 4;
+  const averageFiveYears = averageYearly * 5;
 
   // AI Decision Logic with depreciation consideration
   const getRecommendation = () => {
@@ -40,19 +50,19 @@ export default function HourlyCostCalculator() {
 
     const initialCost = parseFloat(deviceCost);
     const maintenanceCost = averageYearly;
-    const fourYearMaintenance = averageFourYears;
+    const fiveYearMaintenance = averageFiveYears;
     
-    // Calculate residual value after 4 years
-    const residualValue = deviceValues.year4 || 0;
+    // Calculate residual value after 5 years
+    const residualValue = deviceValues.year5 || 0;
     
     // Total cost = device cost - residual value + maintenance
     const netDeviceCost = initialCost - residualValue;
-    const totalCost4Years = netDeviceCost + fourYearMaintenance;
+    const totalCost5Years = netDeviceCost + fiveYearMaintenance;
 
     // Calculate ratios
     const yearlyMaintenanceRatio = (maintenanceCost / initialCost) * 100;
-    const fourYearMaintenanceRatio = (fourYearMaintenance / initialCost) * 100;
-    const totalCostRatio = (totalCost4Years / initialCost) * 100;
+    const fiveYearMaintenanceRatio = (fiveYearMaintenance / initialCost) * 100;
+    const totalCostRatio = (totalCost5Years / initialCost) * 100;
 
     // Decision logic with more balanced thresholds
     let recommendation = '';
@@ -65,36 +75,43 @@ export default function HourlyCostCalculator() {
       status = 'excellent';
       recommendation = 'HIGHLY RECOMMENDED';
       reasoning.push('Average annual maintenance is less than 8% of device cost - excellent value');
+      reasoning.push(`Device reliability score of ${reliabilityScore}% means minimal repair interventions needed`);
       reasoning.push('Very low operational expenses relative to initial investment');
     } else if (avgYearlyRatio < 15) {
       status = 'good';
       recommendation = 'RECOMMENDED';
       reasoning.push(`Average annual maintenance at ${avgYearlyRatio.toFixed(1)}% of device cost - solid investment`);
+      reasoning.push(`With ${reliabilityScore}% reliability, most days will run without issues`);
       reasoning.push('Good balance between initial cost and realistic operating expenses');
     } else if (avgYearlyRatio < 25) {
       status = 'fair';
       recommendation = 'PROCEED WITH CAUTION';
       reasoning.push(`Average annual maintenance is ${avgYearlyRatio.toFixed(1)}% of device cost - moderate`);
+      reasoning.push(`Device reliability at ${reliabilityScore}% suggests occasional downtime and repairs`);
       reasoning.push('Consider if the device productivity justifies this ongoing expense');
     } else if (avgYearlyRatio < 40) {
       status = 'poor';
       recommendation = 'NOT RECOMMENDED';
       reasoning.push(`Average annual maintenance is ${avgYearlyRatio.toFixed(1)}% of device cost - high`);
+      reasoning.push(`Low reliability score (${reliabilityScore}%) indicates frequent maintenance needs`);
       reasoning.push('Significant operational costs relative to device value');
     } else {
       status = 'not-recommended';
       recommendation = 'STRONGLY NOT RECOMMENDED';
       reasoning.push('Annual maintenance costs are excessive relative to device value');
+      reasoning.push(`Poor reliability (${reliabilityScore}%) means constant repairs and downtime`);
       reasoning.push('Consider alternatives or exploring more cost-effective solutions');
     }
 
-    // Additional insights
+    // Additional insights with 5-year perspective
     if (residualValue > initialCost * 0.2) {
-      reasoning.push(`Device retains ${((residualValue / initialCost) * 100).toFixed(1)}% value after 4 years - good resale potential`);
+      reasoning.push(`Device retains ${((residualValue / initialCost) * 100).toFixed(1)}% value after 5 years - good resale potential`);
     }
 
-    if (fourYearMaintenance > initialCost) {
-      reasoning.push(`Over 4 years, maintenance costs will reach ${(fourYearMaintenance / initialCost).toFixed(1)}x the initial investment`);
+    if (fiveYearMaintenance > initialCost * 1.5) {
+      reasoning.push(`Over 5 years, maintenance costs will reach ${(fiveYearMaintenance / initialCost).toFixed(1)}x the initial investment`);
+    } else if (fiveYearMaintenance < initialCost * 0.5) {
+      reasoning.push(`Over 5 years, total maintenance is only ${(fiveYearMaintenance / initialCost).toFixed(1)}x the device cost - very economical`);
     }
 
     return {
@@ -102,11 +119,12 @@ export default function HourlyCostCalculator() {
       status,
       reasoning,
       yearlyMaintenanceRatio: yearlyMaintenanceRatio.toFixed(1),
-      fourYearMaintenanceRatio: fourYearMaintenanceRatio.toFixed(1),
-      totalCost4Years: totalCost4Years.toFixed(2),
+      fiveYearMaintenanceRatio: fiveYearMaintenanceRatio.toFixed(1),
+      totalCost5Years: totalCost5Years.toFixed(2),
       netDeviceCost: netDeviceCost.toFixed(2),
       residualValue: residualValue.toFixed(2),
-      breakEvenPoint: (initialCost / averageYearly).toFixed(1)
+      breakEvenPoint: (initialCost / averageYearly).toFixed(1),
+      reliabilityMessage: reliabilityScore >= 80 ? 'Highly Reliable' : reliabilityScore >= 60 ? 'Moderately Reliable' : 'Needs Frequent Service'
     };
   };
 
@@ -260,6 +278,30 @@ export default function HourlyCostCalculator() {
               </div>
               <p className="text-xs text-gray-500 mt-1">Typical: 10-20% for electronics</p>
             </div>
+
+            {/* Reliability Score */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Device Reliability Score
+              </label>
+              <div className="relative">
+                <AlertCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={reliabilityScore}
+                  onChange={(e) => setReliabilityScore(e.target.value)}
+                  placeholder="e.g., 65"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg"
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
+                  /100
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">0=Always needs repair, 100=Never breaks</p>
+            </div>
           </div>
         </div>
 
@@ -301,6 +343,12 @@ export default function HourlyCostCalculator() {
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(deviceValues.year4)}</p>
                 <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year4 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
               </div>
+              
+              <div className="bg-gradient-to-br from-emerald-50 to-lime-50 p-4 rounded-xl border-2 border-emerald-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">After 5 Years</p>
+                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(deviceValues.year5)}</p>
+                <p className="text-xs text-gray-500 mt-2">{((1 - ((deviceValues.year5 || 0) / (deviceValues.year0 || 1))) * 100).toFixed(0)}% depreciated</p>
+              </div>
             </div>
           </div>
         )}
@@ -332,7 +380,12 @@ export default function HourlyCostCalculator() {
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white border-opacity-30">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-6 border-t border-white border-opacity-30">
+                  <div>
+                    <p className="text-sm opacity-80">Device Reliability</p>
+                    <p className="text-2xl font-bold">{reliabilityScore}%</p>
+                    <p className="text-xs opacity-70">{decision.reliabilityMessage}</p>
+                  </div>
                   <div>
                     <p className="text-sm opacity-80">Avg Yearly Maintenance</p>
                     <p className="text-2xl font-bold">{decision.yearlyMaintenanceRatio}%</p>
@@ -341,11 +394,11 @@ export default function HourlyCostCalculator() {
                   <div>
                     <p className="text-sm opacity-80">Residual Value</p>
                     <p className="text-2xl font-bold">{formatCurrency(decision.residualValue)}</p>
-                    <p className="text-xs opacity-70">after 4 years</p>
+                    <p className="text-xs opacity-70">after 5 years</p>
                   </div>
                   <div>
-                    <p className="text-sm opacity-80">Net 4-Year Cost</p>
-                    <p className="text-2xl font-bold">{formatCurrency(decision.totalCost4Years)}</p>
+                    <p className="text-sm opacity-80">Net 5-Year Cost</p>
+                    <p className="text-2xl font-bold">{formatCurrency(decision.totalCost5Years)}</p>
                     <p className="text-xs opacity-70">with depreciation</p>
                   </div>
                   <div>
@@ -430,12 +483,12 @@ export default function HourlyCostCalculator() {
               </div>
             </div>
 
-            {/* 4 Years */}
+            {/* 5 Years */}
             <div className="bg-gradient-to-r from-gray-700 to-gray-900 rounded-xl shadow-lg p-6 text-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-gray-300 text-sm font-medium mb-1">Average 4-Year Maintenance</p>
-                  <p className="text-4xl font-bold">{formatCurrency(averageFourYears)}</p>
+                  <p className="text-gray-300 text-sm font-medium mb-1">Average 5-Year Maintenance</p>
+                  <p className="text-4xl font-bold">{formatCurrency(averageFiveYears)}</p>
                   <p className="text-gray-300 text-sm mt-2">
                     Total maintenance expenses
                   </p>
