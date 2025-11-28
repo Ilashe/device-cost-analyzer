@@ -500,60 +500,97 @@ export default function HourlyCostCalculator() {
             </div>
 
             {/* Summary Table */}
-            <div className="bg-white rounded-xl shadow-lg p-6 overflow-x-auto">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Complete Average Cost Summary</h3>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-3 px-4 text-gray-700 font-semibold">Period</th>
-                    <th className="text-right py-3 px-4 text-gray-700 font-semibold">Avg Maintenance Cost</th>
-                    {deviceCost && <th className="text-right py-3 px-4 text-gray-700 font-semibold">% of Device Cost</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Daily</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageDaily)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageDaily / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Weekly (5 days)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageWeekly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageWeekly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Monthly (4 weeks)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageMonthly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageMonthly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Yearly (12 months)</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageYearly)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right text-gray-600">{((averageYearly / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
-                  </tr>
-                  <tr className="bg-gray-50 border-b-2 border-gray-300">
-                    <td className="py-3 px-4 text-gray-800 font-semibold">4 Years</td>
-                    <td className="py-3 px-4 text-right font-bold text-indigo-600 text-lg">{formatCurrency(averageFourYears)}</td>
-                    {deviceCost && <td className="py-3 px-4 text-right font-bold text-indigo-600">{((averageFourYears / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>}
-                  </tr>
-                  {deviceCost && (
-                    <tr className="bg-indigo-50">
-                      <td className="py-3 px-4 text-gray-800 font-semibold">Initial Device Cost</td>
-                      <td className="py-3 px-4 text-right font-bold text-gray-800">{formatCurrency(parseFloat(deviceCost))}</td>
-                      <td className="py-3 px-4 text-right text-gray-600">100%</td>
-                    </tr>
-                  )}
-                  {deviceCost && (
-                    <tr className="bg-indigo-100">
-                      <td className="py-3 px-4 text-gray-900 font-bold">Total Cost (4 yrs with depreciation)</td>
-                      <td className="py-3 px-4 text-right font-bold text-indigo-700 text-xl">{formatCurrency(parseFloat(deviceCost) - (deviceValues.year4 || 0) + averageFourYears)}</td>
-                      <td className="py-3 px-4 text-right font-bold text-indigo-700">{(((parseFloat(deviceCost) - (deviceValues.year4 || 0) + averageFourYears) / parseFloat(deviceCost)) * 100).toFixed(2)}%</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+<div className="bg-white rounded-xl shadow-lg p-6 overflow-x-auto">
+  <h3 className="text-lg font-semibold text-gray-800 mb-4">Complete Average Cost Summary</h3>
+  <table className="w-full">
+    <thead>
+      <tr className="border-b-2 border-gray-200">
+        <th className="text-left py-3 px-4 text-gray-700 font-semibold">Period</th>
+        <th className="text-right py-3 px-4 text-gray-700 font-semibold">Avg Maintenance Cost</th>
+        {deviceCost && (
+          <th className="text-right py-3 px-4 text-gray-700 font-semibold">% of Device Cost</th>
+        )}
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr className="border-b border-gray-100">
+        <td className="py-3 px-4 text-gray-600">Daily</td>
+        <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageDaily)}</td>
+        {deviceCost && (
+          <td className="py-3 px-4 text-right text-gray-600">
+            {((averageDaily / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        )}
+      </tr>
+
+      <tr className="border-b border-gray-100">
+        <td className="py-3 px-4 text-gray-600">Weekly (5 days)</td>
+        <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageWeekly)}</td>
+        {deviceCost && (
+          <td className="py-3 px-4 text-right text-gray-600">
+            {((averageWeekly / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        )}
+      </tr>
+
+      <tr className="border-b border-gray-100">
+        <td className="py-3 px-4 text-gray-600">Monthly (4 weeks)</td>
+        <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageMonthly)}</td>
+        {deviceCost && (
+          <td className="py-3 px-4 text-right text-gray-600">
+            {((averageMonthly / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        )}
+      </tr>
+
+      <tr className="border-b border-gray-100">
+        <td className="py-3 px-4 text-gray-600">Yearly (12 months)</td>
+        <td className="py-3 px-4 text-right font-semibold text-gray-800">{formatCurrency(averageYearly)}</td>
+        {deviceCost && (
+          <td className="py-3 px-4 text-right text-gray-600">
+            {((averageYearly / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        )}
+      </tr>
+
+      <tr className="bg-gray-50 border-b-2 border-gray-300">
+        <td className="py-3 px-4 text-gray-800 font-semibold">5 Years</td>
+        <td className="py-3 px-4 text-right font-bold text-indigo-600 text-lg">
+          {formatCurrency(averageFiveYears)}
+        </td>
+        {deviceCost && (
+          <td className="py-3 px-4 text-right font-bold text-indigo-600">
+            {((averageFiveYears / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        )}
+      </tr>
+
+      {deviceCost && (
+        <tr className="bg-indigo-50">
+          <td className="py-3 px-4 text-gray-800 font-semibold">Initial Device Cost</td>
+          <td className="py-3 px-4 text-right font-bold text-gray-800">
+            {formatCurrency(parseFloat(deviceCost))}
+          </td>
+          <td className="py-3 px-4 text-right text-gray-600">100%</td>
+        </tr>
+      )}
+
+      {deviceCost && (
+        <tr className="bg-indigo-100">
+          <td className="py-3 px-4 text-gray-900 font-bold">Total Cost (5 yrs with depreciation)</td>
+          <td className="py-3 px-4 text-right font-bold text-indigo-700 text-xl">
+            {formatCurrency(parseFloat(deviceCost) - (deviceValues.year5 || 0) + averageFiveYears)}
+          </td>
+          <td className="py-3 px-4 text-right font-bold text-indigo-700">
+            {(((parseFloat(deviceCost) - (deviceValues.year5 || 0) + averageFiveYears) / parseFloat(deviceCost)) * 100).toFixed(2)}%
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+</div>
         )}
 
         {/* Empty State */}
