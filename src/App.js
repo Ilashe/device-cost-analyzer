@@ -171,7 +171,7 @@ export default function HourlyCostCalculator() {
               <Calculator className="text-white" size={28} />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-              Device Cost Analyzer
+              AVW Device Cost Analyzer
             </h1>
           </div>
           <p className="text-gray-600 ml-16">
