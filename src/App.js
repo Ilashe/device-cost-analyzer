@@ -169,7 +169,7 @@ export default function HourlyCostCalculator() {
   <div className="flex flex-col items-center mb-4">
     {/* AVW Logo */}
     <img 
-      src="./avw-logo.jpg" 
+      src="/avw-logo.jpg" 
       alt="AVW Logo"
       className="h-20 w-20 mb-4 object-contain"
     />
