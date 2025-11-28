@@ -171,7 +171,7 @@ export default function HourlyCostCalculator() {
     <img 
       src="/avw-logo.jpg" 
       alt="AVW Logo"
-      className="h-20 w-20 mb-4 object-contain"
+      className="h-40 w-40 mb-4 object-contain"
     />
   </div>
   
